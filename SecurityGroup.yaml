@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  This template provisions an EC2 instance in a VPC Subnet provisioned in a different stack.
+
+# This template creates:
+#   Security Group
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  VPC:
+    Description: VPC
+    Type: AWS::EC2::VPC::Id
+
+######################
+# Security Group section
+######################
+
+Resources:
+  ## Load Balancer Security Group
+
+  BASTION:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+#관리자 IP로 변경 필수!! 
+      Tags:
+        - Key: Name
+          Value: BASTION
+          Key: Region
+          Value: SEOUL
+
+
+  ## Load Balancer Security Group
+  ALBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: ALBSG
+          Key: Region
+          Value: SEOUL
+
+
+  ## Web Server Security Group
+  WebSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BASTION
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSG
+      Tags:
+        - Key: Name
+          Value: WebSG
+          Key: Region
+          Value: SEOUL
+
+
+  ## DB Server Security Group
+  DBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable MYSQL/Aurora ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref BASTION
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref WebSG
+      Tags:
+        - Key: Name
+          Value: DBSG
+          Key: Region
+          Value: SEOUL
+
