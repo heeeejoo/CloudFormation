@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Security Group creates Template: BASTION(ssh), ALBSG(httpd), WebSG(BASTION,ALBSG), DBSG(BASTION,ALBSG)
+
+Parameters:
+  VPC:
+    Description: VPC 10.0.0.0/16
+    Type: AWS::EC2::VPC::Id
+
+Resources:
+  ## Security Group creates
+  BASTION:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BASTION
+      GroupDescription: Enable HTTP ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: BASTION
+          Key: Region
+          Value: Seoul
+
+  ## Load Balancer Security Group creates
+  ALBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ALBSG
+      GroupDescription: Enable HTTP ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: ALBSG
+          Key: Region
+          Value: Seoul
+
+
+  ## Web Server Security Group creates
+  WebSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WebSG
+      GroupDescription: Enable HTTP ingress
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref BASTION
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref ALBSG
+      Tags:
+        - Key: Name
+          Value: WebSG
+          Key: Region
+          Value: Seoul
+
+
+  ## DB Server Security Group creates
+  DBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable MYSQL/Aurora ingress
+      GroupName: DBSG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref BASTION
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref WebSG
+
+      Tags:
+        - Key: Name
+          Value: DBSG
+          Key: Region
+          Value: Seoul

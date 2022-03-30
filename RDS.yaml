@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC Create Stack File
+Parameters:
+ 
+  VPC:
+    Description: VPC - 10.0.0.0/16
+    Type: AWS::EC2::VPC::Id
+
+  PrivateSubnet1: 
+    Description: PrivateSubnet1 - 10.0.2.0/23
+    Type: AWS::EC2::Subnet::Id
+
+  PrivateSubnet2:
+    Description: PrivateSubnet2 - 10.0.4.0/23
+    Type: AWS::EC2::Subnet::Id
+
+
+#RDS
+
+#  DBInstanceID:
+#lab-db
+#    Default: lab-db  mydbinstance 
+#    Description: My database instance (settings db instance identifier)
+#    Type: String
+#    MinLength: '1'
+#    MaxLength: '63'
+#    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+
+#  DBName:
+#    Default: RDS   lab-db
+#    Description: The My database name (additional configuration initial databases name?)
+#    Type: String
+#    MinLength: '1'
+#    MaxLength: '64'
+#    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+
+#  DBUsername:
+#lab_admin
+#    NoEcho: 'true'
+#    Description: lab_admin  The database admin account username for MySQL database access
+#    Type: String
+#    MinLength: '1'
+#    MaxLength: '16'
+#    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+
+#  DBPassword:
+#qwer1234
+#    NoEcho: 'true'
+#    Description: qwer1234   Password MySQL database access  The database admin account password
+#    Type: String
+#    MinLength: '8'
+#    MaxLength: '41'
+#    AllowedPattern: '[a-zA-Z0-9]*'
+
+
+  DBInstanceClass:
+    Default: db.t2.micro
+    Description: DB instance class
+    Type: String
+    AllowedValues:
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+
+  DBAllocatedStorage:
+    Default: '20'
+    Description: The size of the database (GiB)
+    Type: Number
+    MinValue: '20'
+    MaxValue: '1000'
+    ConstraintDescription: must be between 20 and 65536 GiB.
+
+  DBSG:
+    Description: DBSG
+    Type: AWS::EC2::SecurityGroup::Id
+
+
+
+
+Resources:
+
+# Database Subnet Group Create
+  RDSSubG: 
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: CloudFormation managed DB subnet group (Private Subnet)
+      DBSubnetGroupName: RDSSubG
+      SubnetIds: 
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+
+  # RDS Create
+  MyMasterDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: MyRDS
+#      DBInstanceIdentifier: !Ref DBInstanceID
+      DBName: RDS
+#      DBName: !Ref DBName
+      DBInstanceClass: db.t2.micro
+#      DBInstanceClass: !Ref DBInstanceClass
+      StorageType: gp2
+      AllocatedStorage: 20
+      Engine: MySQL 
+      EngineVersion: 8.0.27
+      MasterUsername: admin
+#      MasterUsername: !Ref DBUsername
+      MasterUserPassword: qwer1234
+#      MasterUserPassword: !Ref DBPassword
+       DBSubnetGroupName: !Ref RDSSubG
+      VPCSecurityGroups:
+        - Ref: DBSG
+      PubliclyAccessible: false
+      DeleteAutomatedBackups: true
+
+      Tags:
+        - Key: Name
+          Value: Master Database
+
+          
+
+
